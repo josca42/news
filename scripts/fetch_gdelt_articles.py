@@ -3,4 +3,4 @@ import time
 
 while True:
     articles.fetch_remaining()
-    time.sleep(5 * 60)
+    time.sleep(60)

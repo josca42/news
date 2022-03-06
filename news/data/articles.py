@@ -39,7 +39,8 @@ def fetch_remaining():
         articles[idx * chunk_size : (idx + 1) * chunk_size] for idx in range(chunks)
     ]
 
-    for _ in pool.map(run_fetch_articles, chunked_data):
-        pass
+    # for _ in pool.map(run_fetch_articles, chunked_data):
+    #     pass
 
+    pool.map(run_fetch_articles, chunked_data)
     pool.shutdown()
