@@ -8,13 +8,13 @@ authors = ["josca"]
 python = "^3.8"
 pandas = "^1.4.0"
 lz4 = "^4.0.0"
-httpx = "^0.22.0"
 pip = "^22.0.3"
 SQLAlchemy = "^1.4.31"
 python-dotenv = "^0.19.2"
 schedule = "^1.1.0"
 pyarrow = "^7.0.0"
 anyio = "^3.5.0"
+docarray = {extras = ["full"], version = "^0.9.1"}
 
 [tool.poetry.dev-dependencies]
 jupyterlab = "^3.2.9"
