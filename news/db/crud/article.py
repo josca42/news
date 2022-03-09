@@ -67,9 +67,9 @@ class CRUDArticle:
             df = pd.read_sql_query(query.statement, db.bind)
         return df
 
-    def exists(self, id: str):
+    def url_exists(self, url: str):
         with self.session() as db:
-            q = db.query(self.model).filter(self.model.id == id)
+            q = db.query(self.model).filter(self.model.url == url)
             exists = db.query(q.exists()).first()
         return exists[0]
 

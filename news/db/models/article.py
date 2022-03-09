@@ -16,10 +16,11 @@ from sqlalchemy.sql import func
 class Article(Base):
     __tablename__ = "articles"  # type: ignore
 
-    id = Column(BigInteger, primary_key=True, nullable=False)
+    id = Column(Integer, primary_key=True)
     url = Column(String)
     downloaded = Column(Boolean, default=0)
-    doc_store_raw = Column(Boolean, default=0)
+    added2docs = Column(Boolean, default=0)
+    indexed = Column(Boolean, default=0)
     language = Column(String, default="")
     retries = Column(Integer, default=0)
 

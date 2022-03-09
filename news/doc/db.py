@@ -5,4 +5,4 @@ from news import config
 cfg = SqliteConfig(
     connection=str(config["sqlite_doc_store"]), table_name="raw_documents"
 )
-da_store = DocumentArray(storage="sqlite", config=cfg)
+doc_store = DocumentArray(storage="sqlite", config=cfg)

@@ -38,13 +38,15 @@ def events_url2df(url):
 
 
 def add_events2db(df, english=True):
-    for idx, row in df.iterrows():
-        article_dict = dict(
-            id=row["GLOBALEVENTID"],
-            url=row["SOURCEURL"],
-            language="en" if english else "trans",
-        )
-        crud.article.create(article_dict)
+    for url in df["SOURCEURL"].unique():
+        if not crud.article.url_exists(url=url):
+            article_dict = dict(
+                url=url,
+                language="en" if english else "trans",
+            )
+            crud.article.create(article_dict)
+        else:
+            pass
 
 
 if __name__ == "__main__":
