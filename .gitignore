@@ -1,5 +1,6 @@
-/data
-/archive
+data
+notebooks/archive
+archive
 *-checkpoint.ipynb
 .vscode
 .env

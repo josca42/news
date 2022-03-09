@@ -54,6 +54,19 @@ class CRUDArticle:
             df = pd.read_sql_query(query.statement, db.bind)
         return df
 
+    def filter(self, filters: dict) -> pd.DataFrame:
+        """
+        If multiple filter conditions then the "and" filter operation
+        is performed.
+        """
+        with self.session() as db:
+            query = db.query(self.model)
+            for key, value in filters.items():
+                query = query.filter(getattr(self.model, key) == value)
+
+            df = pd.read_sql_query(query.statement, db.bind)
+        return df
+
     def exists(self, id: str):
         with self.session() as db:
             q = db.query(self.model).filter(self.model.id == id)
