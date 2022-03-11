@@ -5,9 +5,10 @@ from datetime import datetime
 from news.doc.db import doc_store
 from tqdm import tqdm
 from news.db import crud
+from wrapt_timeout_decorator import timeout
 
 
-def import_articles2docArray(load_images=False):
+def add_articles2docArray(load_images=False):
     new_articles = crud.article.filter(filters=dict(added2docs=False, downloaded=True))
     articles_dir = config["articles_dir"]
 
@@ -49,9 +50,7 @@ def create_document(doc_id, article, metadata, load_image=False):
 
     if load_image:
         try:
-            image = Document(
-                uri=article["image_url"], tags=dict(section="image")
-            ).load_uri_to_image_tensor()
+            image = load_image(article)
         except:
             image = Document(modality="image", tags=dict(section="image"))
     else:
@@ -61,5 +60,12 @@ def create_document(doc_id, article, metadata, load_image=False):
     return doc
 
 
+@timeout(20)
+def load_image(article):
+    return Document(
+        uri=article["image_url"], tags=dict(section="image")
+    ).load_uri_to_image_tensor()
+
+
 if __name__ == "__main__":
-    import_articles2docArray()
+    add_articles2docArray()
