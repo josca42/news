@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import pandas as pd
 from typing import List
-import pandas as pd
 
 from news.db import models, db
 
@@ -82,6 +81,3 @@ class CRUDArticle:
 
 
 article = CRUDArticle(models.Article, db.SessionLocal)
-
-if __name__ == "__main__":
-    a = article.filter(filters={"language": "en"})

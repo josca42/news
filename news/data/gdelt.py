@@ -10,10 +10,10 @@ from news import config
 def add_latest_events2db(english=True):
     url = get_latest_events(english=english)
     fn, df = events_url2df(url)
-    add_events2db(df, english=english)
+    fn = f"{fn.split('.')[0]}_{str(english)}.parquet"
+    add_events2db(df, fn=fn, english=english)
 
-    f_name = f"{fn.split('.')[0]}_{str(english)}.parquet"
-    df.to_parquet(config["gdelt_events_dir"] / f_name)
+    df.to_parquet(config["gdelt_events_dir"] / fn)
 
 
 def get_latest_events(english=True):
@@ -33,16 +33,20 @@ def events_url2df(url):
     r = httpx.get(url)
     zipfile = ZipFile(BytesIO(r.content))
     fn = zipfile.namelist()[0]
-    df = pd.read_csv(zipfile.open(fn), sep="\t", names=gdel_event_headers)
+    df = pd.read_csv(
+        zipfile.open(fn),
+        sep="\t",
+        names=gdel_event_headers,
+        dtype={"EventCode": str, "EventBaseCode": str, "EventRootCode": str},
+    )
     return fn, df
 
 
-def add_events2db(df, english=True):
+def add_events2db(df, fn, english=True):
     for url in df["SOURCEURL"].unique():
         if not crud.article.url_exists(url=url):
             article_dict = dict(
-                url=url,
-                language="en" if english else "trans",
+                url=url, language="en" if english else "trans", gdelt_fn=fn
             )
             crud.article.create(article_dict)
         else:

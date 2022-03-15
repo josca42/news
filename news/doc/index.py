@@ -1,24 +1,17 @@
 from pydoc import Doc
-from news.doc.db import doc_store
+from news.doc.db import doc_store, indexer_title
 from news.db import crud
-from annlite import AnnLite
 from tqdm import tqdm
 from datetime import datetime
 from news.nlp.embedding import get_embedding
 from docarray import Document, DocumentArray
 from news import config
 
-indexer = AnnLite(
-    dim=768,
-    columns=[("date", datetime), ("source", str), ("lang", str)],
-    data_path=config["db_data_dir"] / "title_annlite",
-)
-
 
 def index_docs():
-    def index_docs(docs):
+    def _index_docs(docs):
         docs = DocumentArray(docs)
-        indexer.index(docs)
+        indexer_title.index(docs)
 
     new_docs = crud.article.filter(filters=dict(added2docs=True, indexed=False))
 
@@ -43,11 +36,11 @@ def index_docs():
         crud.article.update(article_update=dict(id=doc.id, indexed=True))
 
         if i % 100:
-            index_docs(docs)
+            _index_docs(docs)
             docs = []
 
     if docs:
-        index_docs(docs)
+        _index_docs(docs)
 
 
 def get_section_text(doc, section):

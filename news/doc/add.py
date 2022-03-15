@@ -2,13 +2,14 @@ from docarray import Document
 from news import config
 from news.data import io
 from datetime import datetime
-from news.doc.db import doc_store
+from .db import doc_store
 from tqdm import tqdm
 from news.db import crud
 from wrapt_timeout_decorator import timeout
 
 
-def add_articles2docArray(load_images=False):
+def add_new_articles2tables():
+
     new_articles = crud.article.filter(filters=dict(added2docs=False, downloaded=True))
     articles_dir = config["articles_dir"]
 
@@ -17,16 +18,20 @@ def add_articles2docArray(load_images=False):
         fp = articles_dir / f"{article_id}.json.lz4"
         article = io.json_reader(fp)
 
-        metadata = get_article_meta_data(article=article)
-        doc = create_document(
-            doc_id=article_id,
-            article=article,
-            metadata=metadata,
-            load_image=load_images,
-        )
-        doc_store.append(doc)
-
+        add_article2doc_store(article=article, article_id=article_id, load_image=True)
+        add_authors2db(article=article, article_id=article_id)
         crud.article.update(article_update=dict(id=article_id, added2docs=True))
+
+
+def add_article2doc_store(article, article_id, load_image=False):
+    metadata = get_article_meta_data(article=article)
+    doc = create_document(
+        doc_id=article_id,
+        article=article,
+        metadata=metadata,
+        load_image=load_image,
+    )
+    doc_store.append(doc)
 
 
 def get_article_meta_data(article: dict) -> dict:
@@ -67,5 +72,10 @@ def load_image(article):
     ).load_uri_to_image_tensor()
 
 
+def add_authors2db(article, article_id):
+    for author in article["authors"]:
+        crud.author.create(author=author, article_id=article_id)
+
+
 if __name__ == "__main__":
-    add_articles2docArray()
+    add_new_articles2tables()
