@@ -1,6 +1,6 @@
-from news.doc.add import add_articles2docArray
+from news.doc.add import add_new_articles2tables
 import time
 
 while True:
-    add_articles2docArray(load_images=True)
+    add_new_articles2tables()
     time.sleep(60)
