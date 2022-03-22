@@ -4,15 +4,15 @@ view = pdk.ViewState(
 
 polygon_layer = pdk.Layer(
     "GeoJsonLayer",
-    data=gdf_plot.__geo_interface__,
+    data=gdf_plot,
     opacity=0.8,
     stroked=False,
     filled=True,
     extruded=True,
     wireframe=True,
-    get_elevation="properties.count",
+    get_elevation="count",
     elevation_scale=300,
-    get_fill_color="properties.color",
+    get_fill_color="color",
     get_line_color=[0, 0, 0],
     auto_highlight=True,
     pickable=True,

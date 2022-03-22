@@ -3,8 +3,8 @@ from .base import CRUDBase
 from news.db import models, db
 
 
-class CRUDAuthor(CRUDBase[models.Author, Session]):
+class CRUDEvent(CRUDBase[models.Event, Session]):
     ...
 
 
-author = CRUDAuthor(models.Author, db.SessionLocal)
+event = CRUDEvent(models.Event, db.SessionLocal)

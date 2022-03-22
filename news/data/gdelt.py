@@ -5,13 +5,14 @@ from zipfile import ZipFile
 from news.data.CONSTANTS import gdel_event_headers
 from news.db import crud
 from news import config
+from tqdm import tqdm
 
 
 def add_latest_events2db(english=True):
     url = get_latest_events(english=english)
     fn, df = events_url2df(url)
     fn = f"{fn.split('.')[0]}_{str(english)}.parquet"
-    add_events2db(df, fn=fn, english=english)
+    add_events2db(df, fn=fn)
 
     df.to_parquet(config["gdelt_events_dir"] / fn)
 
@@ -42,16 +43,26 @@ def events_url2df(url):
     return fn, df
 
 
-def add_events2db(df, fn, english=True):
+def add_events2db(df, fn):
     for url in df["SOURCEURL"].unique():
         if not crud.article.url_exists(url=url):
-            article_dict = dict(
-                url=url, language="en" if english else "trans", gdelt_fn=fn
-            )
+            article_dict = dict(url=url, gdelt_fn=fn)
             crud.article.create(article_dict)
         else:
             pass
 
 
+def recover_events_from_folder():
+    events_dir = config["gdelt_events_dir"]
+    for fp in tqdm(events_dir.iterdir()):
+        df = pd.read_parquet(fp)
+        for url in df["SOURCEURL"].unique():
+            if not crud.article.url_exists(url=url):
+                article_dict = dict(url=url, gdelt_fn=fp.name)
+                crud.article.create(article_dict)
+            else:
+                pass
+
+
 if __name__ == "__main__":
-    add_latest_events2db(english=True)
+    recover_events_from_folder()

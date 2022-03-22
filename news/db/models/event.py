@@ -4,9 +4,12 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 
-class Author(Base):
+class Event(Base):
 
-    author = Column(String, primary_key=True, index=True)
     article_id = Column(Integer, ForeignKey("article.id"), primary_key=True, index=True)
+    event_code = Column(String, primary_key=True, index=True, nullable=True)
+    country_id = Column(Integer, primary_key=True, index=True, default=-1)
+    region_id = Column(Integer, primary_key=True, index=True, default=-1)
+    type = Column(Integer)
 
     article = relationship("Article")
