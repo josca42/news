@@ -25,12 +25,20 @@ class CRUDArticle(CRUDBase[models.Article, Session]):
             exists = db.query(q.exists()).first()
         return exists[0]
 
-    def list_articles_in_db(self, source=None) -> set:
+    def list_articles_in_db(self) -> set:
         with self.session() as db:
             query = db.query(self.model.id)
             list_of_articles = query.distinct()
 
         return {article_id[0] for article_id in list_of_articles}
+
+    def get_articles(self, start_date, end_date):
+        with self.session() as db:
+            query = db.query(self.model).filter(
+                self.model.date_publish.between(end_date, start_date)
+            )
+            df = pd.read_sql_query(query.statement, db.bind)
+        return df
 
 
 article = CRUDArticle(models.Article, db.SessionLocal)

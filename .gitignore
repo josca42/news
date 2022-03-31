@@ -1,5 +1,5 @@
 data
-notebooks/archive
+notebooks
 archive
 *-checkpoint.ipynb
 .vscode

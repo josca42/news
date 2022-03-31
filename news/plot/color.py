@@ -32,8 +32,16 @@ def generate_intervals(values, n_colors):
     """
     Generate list of numbers denoting the color intervals
     """
-    start, middle, end = np.percentile(values, [5, 50, 97.5])
-    color_intervals = np.linspace(start, end, n_colors - 1)
+    start, middle, end = np.percentile(values, [2.5, 85, 99])
+
+    # color_intervals = np.linspace(start, end, n_colors - 1)
+
+    n_1 = int(n_colors * 0.85)
+    n_2 = n_colors - n_1 - 1
+
+    color_intervals = np.hstack(
+        [np.linspace(start, middle, n_1), np.geomspace(middle, end, n_2)]
+    )
     return color_intervals
 
 

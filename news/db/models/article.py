@@ -32,4 +32,4 @@ class Article(Base):
         DateTime(timezone=False), nullable=False, server_default=func.now(), index=True
     )
     source_domain = Column(String, default=None, nullable=True)
-    domain_country = Column(String, default=None, nullable=True, index=True)
+    domain_country = Column(Integer, default=None, nullable=True, index=True)

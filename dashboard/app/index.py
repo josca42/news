@@ -15,14 +15,14 @@ app.layout = html.Div(
     ]
 )
 sidebar_context = [
-    {"title": "Home", "href": "/", "icon": "fas fa-fw fa-tachometer-alt"},
+    {"title": "Overview", "href": "/", "icon": "fas fa-fw fa-tachometer-alt"},
 ]
 
 
 @app.callback(Output("content", "children"), [Input("urlNoRefresh", "pathname")])
 def route(pathname):
     if pathname == "/":
-        return views.home.layout(sidebar_context)
+        return views.overview.layout(sidebar_context)
     else:
         pass
     return views.error.layout(sidebar_context)

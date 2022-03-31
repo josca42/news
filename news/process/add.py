@@ -7,6 +7,7 @@ from tqdm import tqdm
 from news.db import crud
 from wrapt_timeout_decorator import timeout
 import whois
+from news.process.country import get_country_from_source_domain
 
 
 def add_new_articles2tables(recover_db=False):
@@ -18,8 +19,11 @@ def add_new_articles2tables(recover_db=False):
 
     for article_id in tqdm(new_articles["id"].astype(str), total=len(new_articles)):
 
-        fp = articles_dir / f"{article_id}.json.lz4"
-        article = io.json_reader(fp)
+        try:
+            fp = articles_dir / f"{article_id}.json.lz4"
+            article = io.json_reader(fp)
+        except:
+            continue
 
         metadata = get_article_meta_data(article=article)
         add_authors2db(article=article, article_id=article_id)
@@ -44,11 +48,10 @@ def add_new_articles2tables(recover_db=False):
         )
 
 
-def add_article2doc_store(article, article_id, metadata, load_image=False):
+def add_article2doc_store(article, article_id, load_image=False):
     doc = create_document(
         doc_id=article_id,
         article=article,
-        metadata=metadata,
         load_image=load_image,
     )
     doc_store.append(doc)
@@ -81,7 +84,7 @@ def create_document(doc_id, article, metadata, load_image=False):
     else:
         image = Document(modality="image", tags=dict(section="image"))
 
-    doc = Document(id=doc_id, chunks=[title, descr, text, image], tags=metadata)
+    doc = Document(id=doc_id, chunks=[title, descr, text, image])
     return doc
 
 
@@ -113,7 +116,7 @@ def add_metadata2db(metadata, article_id):
 
 def add_domain_country2db(article, article_id):
     source_domain = article["source_domain"]
-    domain_country = get_likely_domain_country(source_domain)
+    domain_country = get_country_from_source_domain(source_domain)
     domain_update = dict(id=article_id, domain_country=domain_country)
     crud.article.update(row_dict=domain_update)
 

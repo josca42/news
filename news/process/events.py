@@ -6,13 +6,14 @@ import pandas as pd
 from tqdm import tqdm
 import numpy as np
 
+
 gdf_regions = gpd.read_parquet(
     "/Users/josca/projects/1729/news/data/gis/regions_simplified.parquet"
 )
 
 
 def add_new_events():
-    new_events = crud.article.filter(filters=dict(events_added=False, downloaded=True))
+    new_events = crud.article.filter(filters=dict(events_added=False, downloaded=False))
     new_event_files = new_events["gdelt_fn"].unique()
     url2article_id = new_events.set_index("url").sort_index()["id"]
     for fn in tqdm(new_event_files):
@@ -100,7 +101,10 @@ def extract_events_for_article(df_article):
 
     df_actor_geo = pd.DataFrame(actor_geo).drop_duplicates()
     df_action_geo = pd.DataFrame(action_geo).drop_duplicates()
-    return pd.concat([df_actor_geo, df_action_geo])
+    df_events = pd.concat([df_actor_geo, df_action_geo])
+    # Drop gdelt events with no geo informations
+    df_events = df_events[df_events["country_id"].notna()].copy()
+    return df_events
 
 
 def add_events2db(event_dict: dict, article_id: int) -> None:
