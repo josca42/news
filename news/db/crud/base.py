@@ -3,6 +3,8 @@ import pandas as pd
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from news.db.db.base_class import Base
+from sqlalchemy.dialects.sqlite import insert
+
 
 ModelType = TypeVar("ModelType", bound=Base)
 SessionType = TypeVar("SessionType", bound=Session)
@@ -62,3 +64,17 @@ class CRUDBase(Generic[ModelType, SessionType]):
 
             df = pd.read_sql_query(query.statement, db.bind)
         return df
+
+    def upsert(self, row_dict: dict):
+        """
+        Function for upserting to sqlite db
+        """
+        with self.session() as db:
+            index_keys = self.model.__table__.primary_key.columns.keys()
+            stm = (
+                insert(self.model)
+                .values(row_dict)
+                .on_conflict_do_update(index_elements=index_keys, set_=row_dict)
+            )
+            db.execute(stm)
+            db.commit()
