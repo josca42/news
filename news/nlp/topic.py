@@ -4,6 +4,11 @@ from news import config
 from news.data import io
 from datetime import datetime
 
+topic_model = BERTopic().load(
+    "../data/bertopic/bertopic_no_embedding",
+    embedding_model="distiluse-base-multilingual-cased-v2",
+)
+
 
 def bertopic_fit_transform():
     articles = get_articles_text()
@@ -14,6 +19,11 @@ def bertopic_fit_transform():
     topics, probs = topic_model.fit_transform(articles)
     arr_topics_probs = np.vstack([np.array(topics), probs]).T
     return topic_model, arr_topics_probs
+
+
+def get_topic(text):
+    topic, _ = topic_model.transform(text)
+    return topic[0]
 
 
 def get_articles_text():
