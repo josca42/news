@@ -59,8 +59,7 @@ class CRUDBase(Generic[ModelType, SessionType]):
         """
         with self.session() as db:
             query = db.query(self.model)
-            for key, value in filters.items():
-                query = query.filter(getattr(self.model, key) == value)
+            query = self._equals(query, filters)
 
             df = pd.read_sql_query(query.statement, db.bind)
         return df
@@ -78,3 +77,18 @@ class CRUDBase(Generic[ModelType, SessionType]):
             )
             db.execute(stm)
             db.commit()
+
+    def _not_equals(self, query, not_equals: dict):
+        for key, value in not_equals.items():
+            query = query.filter(getattr(self.model, key) != value)
+        return query
+
+    def _equals(self, query, not_equals: dict):
+        for key, value in not_equals.items():
+            query = query.filter(getattr(self.model, key) == value)
+        return query
+
+    def _select_columns(self, query, columns: list):
+        cols = [getattr(self.model, col) for col in columns]
+        query = query.with_entities(*cols)
+        return query

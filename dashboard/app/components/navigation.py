@@ -4,16 +4,19 @@ from dash import html
 from dashboard.app.app import app
 from dash.dependencies import Input, Output
 import dash
+from dash import dcc
+from datetime import datetime, timedelta
 
 
 def navigation():
     return html.Nav(
         [
-            # html.Button(
-            #     html.I(className="fa fa-bars"),
-            #     id="sidebarToggleTop",
-            #     className="btn btn-link d-md-none rounded-circle me-3",
-            # ),
+            dcc.DatePickerRange(
+                start_date=datetime.now(),
+                end_date=datetime.now() - timedelta(days=7),
+                display_format="DD/MM/YY",
+                style={"padding-left": "1.5em"},
+            ),
             # html.Ul(
             #     [
             #         html.Div(className="topbar-divider d-none d-sm-block"),
@@ -74,7 +77,7 @@ def navigation():
             #     className="navbar-nav ms-auto",
             # ),
         ],
-        className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow",
+        className="navbar navbar-expand navbar-light bg-white topbar mb-2 static-top shadow",
     )
 
 

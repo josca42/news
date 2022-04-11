@@ -35,6 +35,7 @@ def get_country_from_source_domain(source_domain):
         return country_id
     else:
         country_id = df["country_id"].squeeze()
+        country_id = int(country_id) if country_id else None
         return country_id
 
 

@@ -8,18 +8,19 @@ from news.db import crud
 from wrapt_timeout_decorator import timeout
 import whois
 from news.process.country import get_country_from_source_domain
-from news.nlp.tagging import get_tags_and_relations
-from news.nlp.topic import get_topic
+
+# from news.nlp.tagging import get_tags_and_relations
+# from news.nlp.topic import get_topic
 
 
 def add_new_articles2tables(recover_db=False):
 
     new_articles = crud.article.filter(
-        filters=dict(article_processed=False, downloaded=False)
+        filters=dict(article_processed=True, downloaded=False)
     )
     articles_dir = config["articles_dir"]
 
-    for article_id in tqdm(new_articles["id"].astype(str), total=len(new_articles)):
+    for article_id in tqdm(new_articles["id"], total=len(new_articles)):
 
         try:
             fp = articles_dir / f"{article_id}.json.lz4"
@@ -28,8 +29,8 @@ def add_new_articles2tables(recover_db=False):
             continue
 
         metadata = get_article_meta_data(article=article)
-        add_authors2db(article=article, article_id=article_id)
-        add_metadata2db(metadata=metadata, article_id=article_id)
+        # add_authors2db(article=article, article_id=article_id)
+        # add_metadata2db(metadata=metadata, article_id=article_id)
         add_domain_country2db(article, article_id)
 
         if recover_db:
@@ -83,28 +84,26 @@ def get_likely_domain_country(domain):
     except:
         return None
 
+        # def add_ner_tags_and_relations(article, article_id):
+        #     article_text = article["maintext"]
 
-def add_ner_tags_and_relations(article, article_id):
-    article_text = article["maintext"]
+        #     if article_is_empty(article_text) or article["language"] != "en":
+        #         pass
+        #     else:
+        #         df_ner, df_relations = get_tags_and_relations(article_text)
+        #         df_ner["id"] = article_id
+        #         df_relations["id"] = article_id
 
-    if article_is_empty(article_text) or article["language"] != "en":
-        pass
-    else:
-        df_ner, df_relations = get_tags_and_relations(article_text)
-        df_ner["id"] = article_id
-        df_relations["id"] = article_id
+        #         # update tables
 
-        # update tables
+        # def add_topic(article, article_id):
+        #     article_text = article["maintext"]
 
-
-def add_topic(article, article_id):
-    article_text = article["maintext"]
-
-    if article_is_empty(article_text):
-        pass
-    else:
-        topic = get_topic(article_text)
-        topic_update = dict(id=article_id, topic=topic)
+        #     if article_is_empty(article_text):
+        #         pass
+        #     else:
+        #         topic = get_topic(article_text)
+        #         topic_update = dict(id=article_id, topic=topic)
         crud.article.update(row_dict=topic_update)
 
 

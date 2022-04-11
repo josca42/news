@@ -32,12 +32,23 @@ class CRUDArticle(CRUDBase[models.Article, Session]):
 
         return {article_id[0] for article_id in list_of_articles}
 
-    def get_articles(self, start_date, end_date):
+    def get_multi(
+        self, start_date, end_date, columns=[], not_equals: dict = {}, equals: dict = {}
+    ):
         with self.session() as db:
             query = db.query(self.model).filter(
                 self.model.date_publish.between(end_date, start_date)
             )
+
+            if columns:
+                query = self._select_columns(query, columns)
+            if equals:
+                query = self._equals(query, equals)
+            if not_equals:
+                query = self._not_equals(query, not_equals)
+
             df = pd.read_sql_query(query.statement, db.bind)
+
         return df
 
 

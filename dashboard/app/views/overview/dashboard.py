@@ -7,86 +7,153 @@ from dash.dependencies import Input, Output
 import dash_deck
 import pydeck as pdk
 from news.db import crud
-from news.plot.map import country_counts
+from news import plot
+import dash_bootstrap_components as dbc
 
 from dashboard.app.app import app
 from dashboard.app.components.cards import card, grid_card, tab_card
 from dashboard.app.components.wrappers import main_wrapper
 from datetime import datetime, timedelta
 from news import config
+from news import plot
+import dash_daq as daq
+import geopandas as gpd
+import pickle
+
 
 GRAPH_LAYOUT = {"margin": {"t": 10, "l": 20, "r": 20, "b": 20}}
+topics_id2name = pickle.load(
+    open("/Users/josca/projects/1729/news/data/topics_id2name.p", "rb")
+)
+gdf_countries = gpd.read_parquet(config["gis_dir"] / "countries_simplified.parquet")[
+    ["country", "country_id"]
+]
+country_dropdown = [
+    {"label": label, "value": value} for idx, (label, value) in gdf_countries.iterrows()
+]
+
+start_date = datetime.now()
+end_date = start_date - timedelta(days=17)
 
 
 def layout(sidebar_context):
 
     graph_row1 = html.Div(
         [
-            html.Div(
-                grid_card(
-                    "Event map",
-                    dash_deck.DeckGL(
-                        id="event-map",
-                        mapboxKey=config["MAPBOX_API_KEY"],
-                        # enableEvents=True,
-                        # className="h-100",
-                        # style={"minHeight": "100px"},
-                        # responsive=True,
-                    ),
-                    dropdown_options=[
-                        html.Div("Settings", className="dropdown-header"),
-                        html.A(
-                            "Download data",
-                            id="download-data",
-                            className="dropdown-item",
+            dbc.Card(
+                dbc.CardBody(
+                    [
+                        html.Div(
+                            [
+                                html.H6("Country", className="card-title"),
+                                dcc.Dropdown(
+                                    id="country-id",
+                                    options=country_dropdown
+                                    + [{"label": "All", "value": "all"}],
+                                    value="all",
+                                ),
+                            ],
+                            className="mb-2",
                         ),
-                        html.A(
-                            "change something",
-                            id="change-something",
-                            className="dropdown-item",
+                        html.Div(
+                            [
+                                html.H6("Plot", className="card-title pt-2"),
+                                dcc.Dropdown(
+                                    id="map-var",
+                                    options=[
+                                        {
+                                            "label": "Url origin",
+                                            "value": "domain_country",
+                                        },
+                                        {"label": "Actors", "value": "actor"},
+                                        {"label": "Action", "value": "action"},
+                                    ],
+                                    value="domain_country",
+                                    className="mb-1 pb-1",
+                                ),
+                            ],
+                            className="mb-2",
+                        ),
+                        html.Div(
+                            [
+                                html.H6("Settings", className="card-title pt-2"),
+                                html.Div(
+                                    daq.BooleanSwitch(
+                                        id="map-3d",
+                                        on=True,
+                                        label="3D",
+                                        labelPosition="bottom",
+                                    ),
+                                    className="pb-1",
+                                    style={"float": "left"},
+                                ),
+                                html.Div(
+                                    daq.BooleanSwitch(
+                                        id="map-regions",
+                                        on=False,
+                                        label="regions",
+                                        labelPosition="bottom",
+                                    ),
+                                    className="pb-1",
+                                    style={"float": "left"},
+                                ),
+                            ],
                         ),
                     ],
                 ),
-                className="col-12 col-md-12 pt-2 pb-4",
+                color="light",
+                className="col-2 h-100",
+            ),
+            html.Div(
+                dcc.Loading(
+                    html.Div(
+                        dash_deck.DeckGL(
+                            id="event-map",
+                            mapboxKey=config["MAPBOX_API_KEY"],
+                            # enableEvents=True,
+                        ),
+                    ),
+                    parent_className="h-100",
+                    color="var(--bs-primary)",
+                ),
+                className="card col-10 h-100",
             ),
         ],
         className="row flex-grow-1",
     )
 
-    # graph_row2 = html.Div(
-    #     [
-    #         html.Div(
-    #             grid_card(
-    #                 "Graph",
-    #                 dcc.Graph(
-    #                     id="graph2",
-    #                     figure={"layout": GRAPH_LAYOUT, "data": []},
-    #                     className="h-100",
-    #                     style={"minHeight": "100px"},
-    #                     responsive=True,
-    #                 ),
-    #             ),
-    #             className="col-12 col-md-6 pt-2 pb-4",
-    #         ),
-    #         html.Div(
-    #             tab_card(
-    #                 None,
-    #                 id="tab2",
-    #                 elements=[
-    #                     {"label": "Option 1", "value": "0"},
-    #                     {"label": "Option 2", "value": "1"},
-    #                     {"label": "Option 3", "value": "2"},
-    #                 ],
-    #                 value="0",
-    #             ),
-    #             className="col-12 col-md-6 pt-2 pb-4",
-    #         ),
-    #     ],
-    #     className="row flex-grow-1",
-    # )
+    graph_row2 = html.Div(
+        [
+            html.Div(
+                grid_card(
+                    "Topics",
+                    dcc.Graph(
+                        id="topics-ts",
+                        className="h-100",
+                        style={"minHeight": "100px"},
+                        responsive=True,
+                    ),
+                ),
+                className="col-12 col-md-6 pt-2 pb-4",
+            ),
+            html.Div(
+                tab_card(
+                    None,
+                    id="entities",
+                    elements=[
+                        {"label": "PER", "value": "PER"},
+                        {"label": "ORG", "value": "ORG"},
+                    ],
+                    value="PER",
+                ),
+                className="col-12 col-md-6 pt-2 pb-4",
+            ),
+        ],
+        className="row flex-grow-1",
+    )
 
     return main_wrapper(
-        [graph_row1],
+        [graph_row1, graph_row2],
         sidebar_context,
     )
 
@@ -96,9 +163,6 @@ def layout(sidebar_context):
     [Input("urlNoRefresh", "href")],
 )
 def update_event_map(_):
-    start_date = datetime.now()
-    end_date = start_date - timedelta(days=13)
-
     df = crud.event.get_multi(start_date, end_date, event_type=1)
     action_counts = (
         df.groupby("country_id")["article_id"]
@@ -107,326 +171,72 @@ def update_event_map(_):
         .drop(-1)
         .reset_index()
     )
-    deck, tooltip = country_counts(df_counts=action_counts)
+    deck, tooltip = plot.map.country_counts(df_counts=action_counts)
     return deck.to_json(), tooltip
 
 
-# @app.callback(Output("graph2", "figure"), [Input("urlNoRefresh", "href")])
-# def update_figure2(_):
-#     return {
-#         "layout": GRAPH_LAYOUT,
-#         "data": [
-#             {
-#                 "uid": "45c0a4",
-#                 "line": {
-#                     "color": "rgb(255, 127, 14)",
-#                     "shape": "spline",
-#                     "width": 3,
-#                 },
-#                 "mode": "lines",
-#                 "name": "iOS & Android",
-#                 "type": "scatter",
-#                 "x": [
-#                     "2007-12-01",
-#                     "2008-12-01",
-#                     "2009-12-01",
-#                     "2010-12-01",
-#                     "2011-12-01",
-#                     "2012-12-01",
-#                     "2013-12-01",
-#                     "2014-12-01",
-#                     "2015-12-01",
-#                 ],
-#                 "y": [
-#                     "0",
-#                     "45560506.663365364",
-#                     "91145081.21192169",
-#                     "232447635.15836716",
-#                     "580348915.5698586",
-#                     "1182888421.2842617",
-#                     "1928559640.2194986",
-#                     "2578825762.2643065",
-#                     "3022276546.8773637",
-#                 ],
-#             }
-#         ],
-#     }
+@app.callback(Output("topics-ts", "figure"), [Input("urlNoRefresh", "href")])
+def update_topics(_):
+    df_topics = crud.article.get_multi(
+        start_date=start_date,
+        end_date=end_date,
+        columns=["date_publish", "topic"],
+        not_equals=dict(topic=-1),
+    )
+
+    topics = df_topics["topic"].value_counts().index[:10]
+    df_topics = (
+        df_topics[df_topics["topic"].isin(topics)]
+        .groupby([df_topics["date_publish"].dt.date, "topic"])
+        .count()
+        .set_axis(["count"], axis=1)
+        .reset_index("topic")
+    )
+
+    fig = plot.timeseries.base(df_topics, "topic", topics_id2name)
+    return fig
 
 
-# @app.callback(
-#     Output("tab1Body", "children"),
-#     [Input("urlNoRefresh", "href"), Input("tab1", "value")],
-# )
-# def update_tab1(_, tabValue):
-#     if tabValue == "0":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "rgb(255, 127, 14)",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
-#     elif tabValue == "1":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "red",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
-#     elif tabValue == "2":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "green",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
+@app.callback(
+    Output("entitiesBody", "children"),
+    [Input("urlNoRefresh", "href"), Input("entities", "value")],
+)
+def update_entities(_, tabValue):
+    def agg_entities(df_ent):
+        top_10_ents = df_ent["text"].value_counts().index[:10]
+        df_ent = (
+            df_ent[df_ent["text"].isin(top_10_ents)]
+            .groupby([df_ent["date_publish"].dt.date, "text"])["count"]
+            .sum()
+            .reset_index("text")
+        )
+        return df_ent
 
-
-# @app.callback(
-#     Output("tab2Body", "children"),
-#     [Input("urlNoRefresh", "href"), Input("tab2", "value")],
-# )
-# def update_tab1(_, tabValue):
-#     sleep(3)
-#     if tabValue == "0":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "rgb(255, 127, 14)",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
-#     elif tabValue == "1":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "red",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
-#     elif tabValue == "2":
-#         return dcc.Graph(
-#             figure={
-#                 "layout": GRAPH_LAYOUT,
-#                 "data": [
-#                     {
-#                         "uid": "45c0a4",
-#                         "line": {
-#                             "color": "green",
-#                             "shape": "spline",
-#                             "width": 3,
-#                         },
-#                         "mode": "lines",
-#                         "name": "iOS & Android",
-#                         "type": "scatter",
-#                         "x": [
-#                             "2007-12-01",
-#                             "2008-12-01",
-#                             "2009-12-01",
-#                             "2010-12-01",
-#                             "2011-12-01",
-#                             "2012-12-01",
-#                             "2013-12-01",
-#                             "2014-12-01",
-#                             "2015-12-01",
-#                         ],
-#                         "y": [
-#                             "0",
-#                             "45560506.663365364",
-#                             "91145081.21192169",
-#                             "232447635.15836716",
-#                             "580348915.5698586",
-#                             "1182888421.2842617",
-#                             "1928559640.2194986",
-#                             "2578825762.2643065",
-#                             "3022276546.8773637",
-#                         ],
-#                     }
-#                 ],
-#             },
-#             className="h-100",
-#             style={"minHeight": "100px"},
-#             responsive=True,
-#         )
+    if tabValue == "PER":
+        df_people = crud.ner.get_multi(
+            start_date=start_date,
+            end_date=end_date,
+            label="PER",
+        )
+        df_people = agg_entities(df_people)
+        fig = plot.timeseries.base(df_people, "text")
+        return dcc.Graph(
+            figure=fig,
+            className="h-100",
+            style={"minHeight": "100px"},
+            responsive=True,
+        )
+    elif tabValue == "ORG":
+        df_org = crud.ner.get_multi(
+            start_date=start_date,
+            end_date=end_date,
+            label="ORG",
+        )
+        df_org = agg_entities(df_org)
+        fig = plot.timeseries.base(df_org, "text")
+        return dcc.Graph(
+            figure=fig,
+            className="h-100",
+            style={"minHeight": "100px"},
+            responsive=True,
+        )
