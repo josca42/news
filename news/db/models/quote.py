@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 class Quote(Base):
 
     article_id = Column(Integer, ForeignKey("article.id"), primary_key=True, index=True)
-    quote = Column(String)
+    quote = Column(String, primary_key=True, index=False)
     quotee = Column(String, primary_key=True, index=True)
 
     article = relationship("Article")

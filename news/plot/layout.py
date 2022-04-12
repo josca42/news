@@ -2,7 +2,7 @@ BASE_LAYOUT = {
     "plot_bgcolor": "white",
     "font": {
         "size": 16,
-        "family": "Kanit",
+        "family": "Kanit ExtraLight",
     },
     "legend": {
         "x": 0,

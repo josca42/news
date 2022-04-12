@@ -15,14 +15,20 @@ app.layout = html.Div(
     ]
 )
 sidebar_context = [
-    {"title": "Overview", "href": "/", "icon": "fas fa-fw fa-tachometer-alt"},
+    {"title": "Feed", "href": "/feed", "icon": "fa-solid fa-comment-dots"},
+    {"title": "Parse", "href": "/parse", "icon": "fa-solid fa-gear"},
+    {"title": "Compare", "href": "/compare", "icon": "fa-solid fa-code-compare"},
 ]
 
 
 @app.callback(Output("content", "children"), [Input("urlNoRefresh", "pathname")])
 def route(pathname):
     if pathname == "/":
-        return views.overview.layout(sidebar_context)
+        return views.parse.layout(sidebar_context)
+    elif pathname == "/feed":
+        return views.feed.layout(sidebar_context)
+    elif pathname == "/parse":
+        return views.parse.layout(sidebar_context)
     else:
         pass
     return views.error.layout(sidebar_context)

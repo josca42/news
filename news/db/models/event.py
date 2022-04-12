@@ -10,6 +10,6 @@ class Event(Base):
     event_code = Column(String, primary_key=True, index=True, nullable=True)
     country_id = Column(Integer, primary_key=True, index=True, default=-1)
     region_id = Column(Integer, primary_key=True, index=True, default=-1)
-    type = Column(Integer)
+    type = Column(Integer, primary_key=True)
 
     article = relationship("Article")
