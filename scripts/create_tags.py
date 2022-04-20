@@ -12,21 +12,14 @@ for doc in doc_store:
     language = crud.article.filter(dict(id=doc.id))["language"].squeeze()
 
     if language == "en":
-        
 
-    df_ner, df_relations = get_tags_and_relations(article_text)
-    df_ner["id"] = article_id
-    df_relations["id"] = article_id
-    ner_dfs.append(df_ner)
-    relations_dfs.append(df_relations)
+        df_ner, df_relations = get_tags_and_relations(text)
 
-    if i % 1000:
-        df_ner = pd.concat(ner_dfs)
-        df_ner.to_parquet(f"/home/paperspace/src/news/data/tags/df_ner_{i}.parquet")
+        df_ner["id"] = doc.id
+        df_relations["id"] = doc.id
 
-        df_relations = pd.concat(relations_dfs)
-        df_relations.to_parquet(
-            f"/home/paperspace/src/news/data/tags/df_relations_{i}.parquet"
-        )
+        for idx, row in df_ner.iterrows():
+            crud.ner.create(row.to_dict())
 
-        ner_dfs, relations_dfs = [], []
+        for idx, row in df_relations.iterrows():
+            crud.relation.create(row.to_dict())
