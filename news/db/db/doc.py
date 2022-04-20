@@ -2,8 +2,7 @@ from docarray import DocumentArray
 from docarray.array.sqlite import SqliteConfig
 from news import config
 from datetime import datetime
-
-# from annlite import AnnLite
+from annlite import AnnLite
 
 cfg = SqliteConfig(
     connection=str(config["sqlite_doc_store"]), table_name="raw_documents"
@@ -11,8 +10,13 @@ cfg = SqliteConfig(
 doc_store = DocumentArray(storage="sqlite", config=cfg)
 
 
-# indexer_title = AnnLite(
-#     dim=768,
-#     columns=[("date", datetime), ("source", str), ("lang", str)],
-#     data_path=config["db_data_dir"] / "title_annlite",
-# )
+doc_index = AnnLite(
+    dim=512,
+    columns=[
+        ("timestamp", datetime),
+        ("source_domain", str),
+        ("language", str),
+        ("domain_country", int),
+    ],
+    data_path=config["db_data_dir"] / "doc_descr_index",
+)

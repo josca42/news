@@ -32,7 +32,7 @@ def add_ner_tags(sentences):
 def extract_tags(tagged_sentences):
     ner_list = []
     for sentence in tagged_sentences:
-        for ner_entitiy in sentence.get_spans():
+        for ner_entitiy in sentence.get_spans("ner"):
             ner_list.append(
                 {"text": ner_entitiy.text, "label": ner_entitiy.labels[0].value}
             )

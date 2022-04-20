@@ -1,28 +1,18 @@
 from news.data import io
 from news import config
 from news.nlp.tagging import get_tags_and_relations
-from pathlib import Path
+from news.db.db.doc import doc_store
+from news.db import crud
 import pandas as pd
 from tqdm import tqdm
 
-articles_dir = config["articles_dir"]
 ner_dfs, relations_dfs = [], []
-for i, fp in tqdm(enumerate(articles_dir.iterdir()), total=207895):
-    article_id = int(fp.name.split(".")[0])
+for doc in doc_store:
+    text = doc.chunks.split_by_tag("section")["body"].texts[0]
+    language = crud.article.filter(dict(id=doc.id))["language"].squeeze()
 
-    try:
-        article = io.json_reader(fp)
-        article_text = article["maintext"]
-
-        if (
-            article_text is None
-            or len(article_text) == 0
-            or article["language"] != "en"
-        ):
-            continue
-
-    except:
-        continue
+    if language == "en":
+        
 
     df_ner, df_relations = get_tags_and_relations(article_text)
     df_ner["id"] = article_id

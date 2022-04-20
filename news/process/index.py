@@ -1,5 +1,4 @@
-from pydoc import Doc
-from news.doc.db import doc_store, indexer_title
+from news.db.db.doc import doc_store, doc_index
 from news.db import crud
 from tqdm import tqdm
 from datetime import datetime
@@ -11,31 +10,32 @@ from news import config
 def index_docs():
     def _index_docs(docs):
         docs = DocumentArray(docs)
-        indexer_title.index(docs)
+        doc_index.index(docs)
 
-    new_docs = crud.article.filter(filters=dict(added2docs=True, indexed=False))
+    new_docs = crud.article.filter(filters=dict(article_processed=True, indexed=False))
 
     docs = []
-    for i, doc_id in tqdm(enumerate(new_docs["id"].astype(str)), total=len(new_docs)):
-        doc = doc_store[doc_id]
+    for idx, row in tqdm(new_docs.iterrows(), total=len(new_docs)):
+        doc = doc_store[str(row["id"])]
 
-        text = get_section_text(doc=doc, section="title")
+        text = get_section_text(doc)
         embedding = get_embedding(text)
 
         doc = Document(
-            id=doc.id,
+            id=str(doc.id),
             embedding=embedding,
             tags={
-                "date": doc.tags["date_publish"],
-                "source": doc.tags["source_domain"],
-                "lang": doc.tags["language"],
+                "timestamp": row["timestamp"],
+                "source_domain": row["source_domain"],
+                "language": row["language"],
+                "domain_country": row["domain_country"],
             },
         )
 
         docs.append(doc)
-        crud.article.update(article_update=dict(id=doc.id, indexed=True))
+        crud.article.update(row_dict=dict(id=row["id"], indexed=True))
 
-        if i % 100:
+        if idx % 100 == 0 and idx > 1:
             _index_docs(docs)
             docs = []
 
@@ -43,9 +43,13 @@ def index_docs():
         _index_docs(docs)
 
 
-def get_section_text(doc, section):
-    texts = doc.chunks.split_by_tag("section")[section].texts
-    return texts[0]
+def get_section_text(doc):
+    sections = doc.chunks.split_by_tag("section")
+    descr = sections["descr"].texts[0]
+    if descr != "":
+        return descr
+    else:
+        return sections["title"].texts[0]
 
 
 if __name__ == "__main__":

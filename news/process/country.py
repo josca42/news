@@ -5,11 +5,9 @@ import pickle
 from news import config
 from news.db import crud
 
-gid2id = pickle.load(open("/Users/josca/projects/1729/news/data/gis/gid2id.p", "rb"))
+gid2id = pickle.load(open(config["gis_dir"] / "gid2id.p", "rb"))
 
-country_mappings = pd.read_csv(
-    "/Users/josca/projects/1729/news/data/domain2country.csv"
-)
+country_mappings = pd.read_csv(config["gis_dir"] / "domain2country.csv")
 domain2country = {
     domain: country
     for idx, (domain, country) in country_mappings[
@@ -72,7 +70,8 @@ def get_country_from_who_is_lookup(source_domain):
     except:
         return None
 
-    if "country" in domain_info:
+    country = domain_info["country"] if "country" in domain_info else None
+    if country:
         country = domain_info["country"]
         if type(country) == list:
             country = country[0]
@@ -85,7 +84,8 @@ def get_country_from_who_is_lookup(source_domain):
         for key in domain_info.keys():
             if "address" in key:
                 address = domain_info[key]
-                country = get_country_from_address(address)
+                if address is not None and address != "REDACTED FOR PRIVACY":
+                    country = get_country_from_address(address)
 
     return country
 
@@ -94,10 +94,11 @@ def get_country_from_address(address):
     gmaps = googlemaps.Client(key=config["GOOGLE_API_KEY"])
     geo = gmaps.geocode(address)
 
-    for addr_comp in geo[0]["address_components"]:
-        if "country" in addr_comp["types"]:
-            country = addr_comp["short_name"]
-            country = iso2_to_iso3[country]
-            return country
+    if geo:
+        for addr_comp in geo[0]["address_components"]:
+            if "country" in addr_comp["types"]:
+                country = addr_comp["short_name"]
+                country = iso2_to_iso3[country]
+                return country
 
     return None

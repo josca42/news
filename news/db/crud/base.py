@@ -41,11 +41,6 @@ class CRUDBase(Generic[ModelType, SessionType]):
                 db.commit()
             except IntegrityError:
                 db.rollback()
-            except OperationalError:
-                try:
-                    db.commit()
-                except (IntegrityError, OperationalError):
-                    db.rollback()
 
     def update(self, row_dict: dict) -> None:
         db_obj = self.get(row_dict["id"])
@@ -54,14 +49,8 @@ class CRUDBase(Generic[ModelType, SessionType]):
             setattr(db_obj, field, row_dict[field])
 
         with self.session() as db:
-            try:
-                db.add(db_obj)
-                db.commit()
-            except OperationalError:
-                try:
-                    db.commit()
-                except OperationalError:
-                    db.rollback()
+            db.add(db_obj)
+            db.commit()
 
     def filter(self, filters: dict) -> pd.DataFrame:
         """

@@ -2,7 +2,7 @@ from docarray import Document
 from news import config
 from news.data import io
 from datetime import datetime
-from news.process.db import doc_store
+from news.db.db.doc import doc_store
 from tqdm import tqdm
 from news.db import crud
 from wrapt_timeout_decorator import timeout
@@ -11,12 +11,10 @@ from news.process.country import get_country_from_source_domain
 
 # from news.nlp.tagging import get_tags_and_relations
 # from news.nlp.topic import get_topic
-
-
-def add_new_articles2tables(recover_db=False):
+def add_new_articles2tables():
 
     new_articles = crud.article.filter(
-        filters=dict(article_processed=True, downloaded=False)
+        filters=dict(article_processed=False, downloaded=True)
     )
     articles_dir = config["articles_dir"]
 
@@ -29,26 +27,14 @@ def add_new_articles2tables(recover_db=False):
             continue
 
         metadata = get_article_meta_data(article=article)
-        # add_authors2db(article=article, article_id=article_id)
-        # add_metadata2db(metadata=metadata, article_id=article_id)
+        add_authors2db(article=article, article_id=article_id)
+        add_metadata2db(metadata=metadata, article_id=article_id)
         add_domain_country2db(article, article_id)
-
-        if recover_db:
-            pass
-        else:
-            add_article2doc_store(
-                article=article,
-                article_id=article_id,
-                metadata=metadata,
-                load_image=True,
-            )
-
-        crud.article.update(
-            row_dict=dict(
-                id=article_id,
-                article_processed=True,
-            )
+        add_article2doc_store(
+            article=article, article_id=article_id, load_image=False,
         )
+
+        crud.article.update(row_dict=dict(id=article_id, article_processed=True))
 
 
 def add_authors2db(article, article_id):
@@ -84,27 +70,28 @@ def get_likely_domain_country(domain):
     except:
         return None
 
-        # def add_ner_tags_and_relations(article, article_id):
-        #     article_text = article["maintext"]
 
-        #     if article_is_empty(article_text) or article["language"] != "en":
-        #         pass
-        #     else:
-        #         df_ner, df_relations = get_tags_and_relations(article_text)
-        #         df_ner["id"] = article_id
-        #         df_relations["id"] = article_id
+# def add_ner_tags_and_relations(article, article_id):
+#     article_text = article["maintext"]
 
-        #         # update tables
+#     if article_is_empty(article_text) or article["language"] != "en":
+#         pass
+#     else:
+#         df_ner, df_relations = get_tags_and_relations(article_text)
+#         df_ner["id"] = article_id
+#         df_relations["id"] = article_id
 
-        # def add_topic(article, article_id):
-        #     article_text = article["maintext"]
+#         # update tables
 
-        #     if article_is_empty(article_text):
-        #         pass
-        #     else:
-        #         topic = get_topic(article_text)
-        #         topic_update = dict(id=article_id, topic=topic)
-        crud.article.update(row_dict=topic_update)
+# def add_topic(article, article_id):
+#     article_text = article["maintext"]
+
+#     if article_is_empty(article_text):
+#         pass
+#     else:
+#         topic = get_topic(article_text)
+#         topic_update = dict(id=article_id, topic=topic)
+#     crud.article.update(row_dict=topic_update)
 
 
 def article_is_empty(article_text):
@@ -112,11 +99,7 @@ def article_is_empty(article_text):
 
 
 def add_article2doc_store(article, article_id, load_image=False):
-    doc = create_document(
-        doc_id=article_id,
-        article=article,
-        load_image=load_image,
-    )
+    doc = create_document(doc_id=article_id, article=article, load_image=load_image)
     doc_store.append(doc)
 
 
@@ -134,7 +117,7 @@ def get_article_meta_data(article: dict) -> dict:
     )
 
 
-def create_document(doc_id, article, metadata, load_image=False):
+def create_document(doc_id, article, load_image=False):
     title = Document(text=article["title"], tags=dict(section="title"))
     descr = Document(text=article["description"], tags=dict(section="descr"))
     text = Document(text=article["maintext"], tags=dict(section="body"))
@@ -159,4 +142,4 @@ def load_image(article):
 
 
 if __name__ == "__main__":
-    add_new_articles2tables(recover_db=True)
+    add_new_articles2tables()

@@ -24,12 +24,12 @@ class Article(Base):
     indexed = Column(Boolean, default=False)
     language = Column(String, default=None, nullable=True)
     retries = Column(Integer, default=0)
-    time_created = Column(DateTime(timezone=True), server_default=func.now())
+    timestamp = Column(
+        DateTime(timezone=True), server_default=func.now(), index=True, nullable=False
+    )
 
     topic = Column(Integer, nullable=True)
     date_download = Column(DateTime(timezone=False), nullable=True)
-    date_publish = Column(
-        DateTime(timezone=False), nullable=False, server_default=func.now(), index=True
-    )
+    date_publish = Column(DateTime(timezone=False), nullable=True,)
     source_domain = Column(String, default=None, nullable=True)
     domain_country = Column(Integer, default=None, nullable=True, index=True)
